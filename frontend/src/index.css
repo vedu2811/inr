@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fin-bg: #0f172a; /* Slate 900 */
+  --color-fin-card: #1e293b; /* Slate 800 */
+  --color-fin-accent: #fbbf24; /* Amber 400 (Gold) */
+  --color-fin-text-main: #e2e8f0; /* Slate 200 */
+  --color-fin-text-muted: #94a3b8; /* Slate 400 */
+  --color-fin-pos: #10b981; /* Emerald 500 */
+  --color-fin-neg: #ef4444; /* Red 500 */
+}
+
+body {
+  background-color: var(--color-fin-bg);
+  color: var(--color-fin-text-main);
+  font-family: "Inter", sans-serif;
+}
