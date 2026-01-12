@@ -5,6 +5,7 @@ import { fetchRiskData } from "./services/dataService";
 import axios from "axios";
 import companyLogo from "./assets/logo.png";
 
+// 🔴 Leave empty for Vercel (dataService uses /api/... correctly)
 const API_URL = "";
 
 const formatHistory = (historyArr) => {
@@ -16,11 +17,16 @@ const formatHistory = (historyArr) => {
   }));
 };
 
+// 🔴 FIX: Added "/api" prefix here so it hits the Vercel function correctly
 const analyzeSpecificGraph = async (apiKey, prompt) => {
   try {
-    const response = await axios.post(`${API_URL}/analyze`, { apiKey, prompt });
+    const response = await axios.post(`${API_URL}/api/analyze`, {
+      apiKey,
+      prompt,
+    });
     return response.data.analysis;
   } catch (error) {
+    console.error("Analysis Error:", error);
     return "Analysis failed. Please check your API key.";
   }
 };
@@ -137,12 +143,10 @@ const App = () => {
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans p-6 md:p-8 relative overflow-x-hidden">
       <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-950/20 to-transparent pointer-events-none" />
 
-      {/* --- HEADER (Updated Styling) --- */}
-      {/* Added gradient background, brighter border, and subtle shadow glow for a less "dull" look */}
+      {/* HEADER */}
       <header className="relative z-10 mb-10 bg-gradient-to-r from-slate-900/80 to-slate-900/40 backdrop-blur-2xl border border-slate-700/50 rounded-3xl p-6 shadow-lg shadow-cyan-900/5 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
-        {/* Logo & Title (Updated Logo) */}
+        {/* Logo */}
         <div className="flex items-center gap-6">
-          {/* Removed the border/padding container */}
           <img
             src={companyLogo}
             alt="Logo"
@@ -158,9 +162,8 @@ const App = () => {
           </div>
         </div>
 
-        {/* VERTICAL CONTROLS */}
+        {/* Controls */}
         <div className="flex flex-col items-end gap-4 w-full xl:w-auto">
-          {/* 1. Live Status & Time */}
           <div className="flex items-center justify-between gap-6 px-5 py-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80 shadow-inner w-full xl:w-auto">
             <div className="flex items-center gap-2.5">
               <span className="relative flex h-2.5 w-2.5">
@@ -182,7 +185,6 @@ const App = () => {
             </div>
           </div>
 
-          {/* 2. API Input Group */}
           <div className="relative group w-full xl:w-80">
             <div className="flex items-center bg-slate-950/80 rounded-xl border border-slate-800/80 focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/10 transition-all shadow-sm overflow-hidden h-11">
               <div className="pl-4 text-slate-500">
@@ -229,9 +231,9 @@ const App = () => {
         context={analysisContext}
       />
 
-      {/* --- GRID (Swapped Positions) --- */}
+      {/* GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* 1. Brent Crude (Hero - Wide) */}
+        {/* 1. Brent Crude */}
         <div className="col-span-1 md:col-span-2 xl:col-span-2">
           <ChartCard
             title="Brent Crude Oil"
@@ -248,7 +250,7 @@ const App = () => {
           />
         </div>
 
-        {/* 2. REER (Standard) */}
+        {/* 2. REER */}
         <div className="col-span-1">
           <ChartCard
             title="India REER (40-Basket)"
@@ -265,7 +267,7 @@ const App = () => {
           />
         </div>
 
-        {/* 🔴 3. CPI (%) (SWAPPED HERE - Standard Size) */}
+        {/* 3. CPI */}
         <div className="col-span-1">
           <ChartCard
             title="India CPI Inflation"
@@ -282,7 +284,7 @@ const App = () => {
           />
         </div>
 
-        {/* 🔴 4. Currency Matrix (SWAPPED HERE - Wide Size) */}
+        {/* 4. Currency */}
         <div className="col-span-1 md:col-span-2 xl:col-span-2">
           <ChartCard
             title="Currency Matrix (Relative %)"
@@ -302,7 +304,7 @@ const App = () => {
           />
         </div>
 
-        {/* 5. Forex Reserves (Wide) */}
+        {/* 5. Forex */}
         <div className="col-span-1 md:col-span-2 xl:col-span-2">
           <ChartCard
             title="Forex Reserves"
@@ -320,7 +322,7 @@ const App = () => {
           />
         </div>
 
-        {/* 6. Trade Deficit (Standard) */}
+        {/* 6. Trade */}
         <div className="col-span-1">
           <ChartCard
             title="Trade Deficit"

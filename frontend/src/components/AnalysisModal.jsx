@@ -15,7 +15,7 @@ const AnalysisModal = ({
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-[#0b1121] border border-slate-700 w-full max-w-6xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
-        {/* --- MODAL HEADER --- */}
+        {/* MODAL HEADER */}
         <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></span>
@@ -32,9 +32,9 @@ const AnalysisModal = ({
           </button>
         </div>
 
-        {/* --- CONTENT SPLIT VIEW --- */}
+        {/* CONTENT */}
         <div className="flex flex-1 overflow-hidden">
-          {/* LEFT: AI Analysis Text */}
+          {/* LEFT: Analysis */}
           <div className="w-1/2 p-8 overflow-y-auto border-r border-slate-700 bg-slate-900/30 custom-scrollbar">
             {analysis ? (
               <div className="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed">
@@ -42,12 +42,6 @@ const AnalysisModal = ({
                   components={{
                     strong: ({ node, ...props }) => (
                       <span className="text-cyan-400 font-bold" {...props} />
-                    ),
-                    li: ({ node, ...props }) => (
-                      <li className="mb-1" {...props} />
-                    ),
-                    p: ({ node, ...props }) => (
-                      <p className="mb-4" {...props} />
                     ),
                   }}
                 >
@@ -62,14 +56,14 @@ const AnalysisModal = ({
             )}
           </div>
 
-          {/* RIGHT: Live Reference Data (The Chart) */}
+          {/* RIGHT: Reference Chart */}
           <div className="w-1/2 bg-[#0b1121] p-6 flex flex-col justify-center relative">
             <h3 className="absolute top-6 left-6 text-xs uppercase text-slate-500 font-bold border-b border-slate-800 pb-2">
               Reference Chart
             </h3>
 
             <div className="w-full">
-              {/* 1. OIL CHART */}
+              {/* 1. OIL */}
               {context === "OIL" && (
                 <ChartCard
                   title="Brent Crude Oil"
@@ -83,58 +77,12 @@ const AnalysisModal = ({
                 />
               )}
 
-              {/* 2. CPI CHART */}
-              {context === "CPI" && (
-                <ChartCard
-                  title="India CPI Inflation"
-                  value={`${data?.cpi?.price?.toFixed(2)}%`}
-                  subValue="Monthly"
-                  data={charts?.cpi}
-                  dataKey="value"
-                  color="#facc15"
-                  unitSuffix="%"
-                  className="h-[350px]"
-                />
-              )}
-
-              {/* 3. TRADE DEFICIT CHART */}
-              {context === "TRADE" && (
-                <ChartCard
-                  title="Trade Deficit"
-                  value={`$${data?.tradeDeficit?.price?.toFixed(2)}B`}
-                  subValue="Monthly"
-                  data={charts?.tradeDeficit}
-                  dataKey="value"
-                  color="#f43f5e"
-                  unitPrefix="$"
-                  unitSuffix="B"
-                  className="h-[350px]"
-                />
-              )}
-
-              {/* 4. FX MATRIX */}
-              {context === "FX" && (
-                <ChartCard
-                  title="Currency Matrix"
-                  value="Exchange Rates"
-                  subValue="Relative %"
-                  data={charts?.fxBasket}
-                  className="h-[350px]"
-                  unitSuffix="%"
-                  multiLines={[
-                    { key: "inr", color: "#06b6d4", name: "INR" },
-                    { key: "cny", color: "#f43f5e", name: "CNY" },
-                    { key: "dxy", color: "#facc15", name: "DXY" },
-                  ]}
-                />
-              )}
-
-              {/* 5. REER CHART */}
+              {/* 2. REER (Fix for missing chart) */}
               {context === "REER" && (
                 <ChartCard
-                  title="India REER (40-Basket)"
+                  title="India REER"
                   value={data?.reer?.price?.toFixed(2)}
-                  subValue="Monthly"
+                  subValue="Reference"
                   data={charts?.reer}
                   dataKey="value"
                   color="#10b981"
@@ -143,15 +91,61 @@ const AnalysisModal = ({
                 />
               )}
 
-              {/* 6. FOREX RESERVES CHART */}
+              {/* 3. CPI */}
+              {context === "CPI" && (
+                <ChartCard
+                  title="India CPI Inflation"
+                  value={`${data?.cpi?.price?.toFixed(2)}%`}
+                  subValue="Reference"
+                  data={charts?.cpi}
+                  dataKey="value"
+                  color="#facc15"
+                  unitSuffix="%"
+                  className="h-[350px]"
+                />
+              )}
+
+              {/* 4. FX */}
+              {context === "FX" && (
+                <ChartCard
+                  title="Currency Matrix"
+                  value="Relative %"
+                  subValue="Reference"
+                  data={charts?.fxBasket}
+                  className="h-[350px]"
+                  unitSuffix="%"
+                  multiLines={[
+                    { key: "inr", color: "#06b6d4" },
+                    { key: "cny", color: "#f43f5e" },
+                    { key: "dxy", color: "#facc15" },
+                  ]}
+                />
+              )}
+
+              {/* 5. FOREX */}
               {context === "FOREX" && (
                 <ChartCard
                   title="Forex Reserves"
                   value={`$${data?.forex?.price?.toFixed(2)}B`}
-                  subValue="Weekly"
+                  subValue="Reference"
                   data={charts?.forex}
                   dataKey="value"
                   color="#3b82f6"
+                  unitPrefix="$"
+                  unitSuffix="B"
+                  className="h-[350px]"
+                />
+              )}
+
+              {/* 6. TRADE */}
+              {context === "TRADE" && (
+                <ChartCard
+                  title="Trade Deficit"
+                  value={`$${data?.tradeDeficit?.price?.toFixed(2)}B`}
+                  subValue="Reference"
+                  data={charts?.tradeDeficit}
+                  dataKey="value"
+                  color="#f43f5e"
                   unitPrefix="$"
                   unitSuffix="B"
                   className="h-[350px]"
