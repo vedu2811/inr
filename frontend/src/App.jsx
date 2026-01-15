@@ -5,7 +5,7 @@ import { fetchRiskData } from "./services/dataService";
 import axios from "axios";
 import companyLogo from "./assets/logo.png";
 
-// 🔴 Leave empty for Vercel (dataService uses /api/... correctly)
+// 🔴 Leave empty for Vercel
 const API_URL = "";
 
 const formatHistory = (historyArr) => {
@@ -17,7 +17,6 @@ const formatHistory = (historyArr) => {
   }));
 };
 
-// 🔴 FIX: Added "/api" prefix here so it hits the Vercel function correctly
 const analyzeSpecificGraph = async (apiKey, prompt) => {
   try {
     const response = await axios.post(`${API_URL}/api/analyze`, {
@@ -103,6 +102,7 @@ const App = () => {
 
   const handleTimeRangeChange = (newRange) => setTimeRange(newRange);
 
+  // 🔴 UPDATED ANALYZE FUNCTION 🔴
   const handleChartAnalyze = async (type) => {
     if (!apiKey) {
       alert("Please enter your Groq API Key first.");
@@ -112,18 +112,71 @@ const App = () => {
     setIsModalOpen(true);
     setAnalysisResult("");
 
+    // Helper to get latest date string
+    const getLatestDate = (historyArr) => {
+      if (!historyArr || historyArr.length === 0) return "Unknown Date";
+      return historyArr[historyArr.length - 1].date; // Returns the actual last date in the array
+    };
+
     let prompt = "";
-    if (type === "OIL")
-      prompt = `Analyze Brent Oil trends at $${data.oil.price}. Impact on INR?`;
-    else if (type === "CPI")
-      prompt = `Analyze India CPI Inflation at ${data.cpi.price}%.`;
-    else if (type === "TRADE")
-      prompt = `Analyze India Trade Deficit at $${data.tradeDeficit.price} Billion.`;
-    else if (type === "FX") prompt = `Analyze INR performance vs CNY and DXY.`;
-    else if (type === "REER")
-      prompt = `Analyze India REER at ${data.reer.price}. Undervalued or Overvalued?`;
-    else if (type === "FOREX")
-      prompt = `Analyze India Forex Reserves at $${data.forex.price} Billion.`;
+    const today = new Date().toLocaleDateString();
+
+    if (type === "OIL") {
+      const date = getLatestDate(data?.oil?.history);
+      prompt = `
+        Context: The company has significant energy needs for manufacturing (FMCG, Paper) and logistics.
+        Data: Brent Crude Oil is trading at $${data.oil.price} as of ${date}.
+        Task: Analyze the impact on input costs and INR stability. Should the treasury increase hedging for oil imports?
+        `;
+    } else if (type === "CPI") {
+      const date = getLatestDate(data?.cpi?.history);
+      prompt = `
+        Context: The company sells FMCG products where consumer demand is sensitive to inflation.
+        Data: India CPI Inflation is at ${data.cpi.price}% as of ${date}.
+        Task: Analyze the impact on consumer purchasing power and the RBI's interest rate stance. How does this affect the cost of working capital?
+        `;
+    } else if (type === "TRADE") {
+      const date = getLatestDate(data?.tradeDeficit?.history);
+      prompt = `
+        Context: A widening trade deficit puts pressure on the INR.
+        Data: India's Trade Deficit is $${data.tradeDeficit.price} Billion as of ${date}.
+        Task: Analyze if this deficit level signals immediate depreciation pressure on the INR. Should the treasury expedite export realization (IT Services/Agri) or delay import payments?
+        `;
+    } else if (type === "FX") {
+      // Specific Currency prompt
+      const date = getLatestDate(data?.currencies?.inr?.history);
+      prompt = `
+        Context: The company exports IT services/Agri (Long USD/EUR) and imports raw materials (Short USD/CNY).
+        Data (As of ${date}):
+        - INR: ${data?.currencies?.inr?.price}
+        - CNY: ${data?.currencies?.cny?.price}
+        - DXY: ${data?.currencies?.dxy?.price}
+        
+        Task:
+        1. Analyze the specific impact of DXY strength/weakness on INR.
+        2. Analyze the CNY correlation (competitor currency in exports).
+        3. Explain how these currencies are interacting right now.
+        4. Provide a trading strategy for the treasury given these correlations.
+        `;
+    } else if (type === "REER") {
+      const date = getLatestDate(data?.reer?.history);
+      prompt = `
+        Context: The company is a net exporter in IT and Agri.
+        Data: India REER (40-Basket) is at ${data.reer.price} as of ${date}. (Fair value is approx 100).
+        Task: Is the INR overvalued or undervalued relative to trade partners? Does an overvalued REER hurt the competitiveness of the company's Agri/IT exports? Recommend a hedging ratio.
+        `;
+    } else if (type === "FOREX") {
+      const date = getLatestDate(data?.forex?.history);
+      prompt = `
+        Context: The treasury actively trades and holds positions in USD, EUR, GBP, and JPY.
+        Data: India Forex Reserves are $${data.forex.price} Billion as of ${date}.
+        Task: 
+        1. Do NOT discuss India's macro risk. 
+        2. Focus specifically on the risks to the corporate treasury trading desk.
+        3. Does this reserve level give the RBI enough firepower to intervene and squash volatility? 
+        4. How should the treasury position its USD, EUR, GBP, and JPY trades in light of RBI's intervention capacity?
+        `;
+    }
 
     const result = await analyzeSpecificGraph(apiKey, prompt);
     setAnalysisResult(result);

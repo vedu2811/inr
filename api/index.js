@@ -23,7 +23,7 @@ const fetchSpreadsheet = async () => {
     const response = await axios.get(GOOGLE_SHEET_URL, {
       responseType: "arraybuffer",
       headers: { "User-Agent": "Mozilla/5.0" },
-      timeout: 10000, // Add timeout
+      timeout: 10000,
     });
 
     const workbook = xlsx.read(response.data, { type: "buffer" });
@@ -174,7 +174,6 @@ const filterByTimeRange = (data, range) => {
 // --- API ROUTES ---
 app.get("/api/dashboard-data", async (req, res) => {
   try {
-    // Check cache
     if (!CACHED_DATA || Date.now() - LAST_FETCH_TIME > CACHE_DURATION) {
       console.log("Cache expired, fetching new data...");
       await fetchSpreadsheet();
@@ -230,18 +229,32 @@ app.post("/api/analyze", async (req, res) => {
     const { prompt, apiKey } = req.body;
     if (!apiKey) return res.status(400).json({ error: "API Key Required" });
 
+    // 🔴 UPDATED SYSTEM PROMPT 🔴
+    const systemPrompt = `
+      You are an AI advisor to the Corporate Treasury team of a large Indian conglomerate. 
+      The company has diversified interests in Cigarettes, FMCG, Agri-business, Paper, and IT services.
+      
+      Your Role & Restrictions:
+      1. Do NOT introduce yourself as a "Senior Risk Analyst" or any other title. Jump straight to the content.
+      2. Do NOT provide advice to the RBI or the Government. Your advice is strictly for the Corporate Treasury.
+      3. Use the 3rd person perspective (e.g., "The Treasury should...", "Impact on INR is...").
+      4. Be in the present moment. Analyze the "Latest Data" provided in the prompt as the current state.
+      5. Do not use introductory filler phrases like "Here is the analysis".
+      
+      Structure of Response:
+      1. **Action/Conclusion**: State clearly what the Treasury should do (e.g., "Hedge 50% of near-term payables" or "Wait and watch").
+      2. **Basis**: Explain the reasoning, connecting the specific data points to the company's business interests (e.g., impact on raw material imports, IT service export revenues).
+    `;
+
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
         model: "llama-3.3-70b-versatile",
         messages: [
-          {
-            role: "system",
-            content: "You are a Senior Treasury Risk Analyst.",
-          },
+          { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        temperature: 0.7,
+        temperature: 0.6, // Lower temperature for more focused advice
         max_tokens: 800,
       },
       {
@@ -257,10 +270,8 @@ app.post("/api/analyze", async (req, res) => {
   }
 });
 
-// Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// 🔴 CRITICAL: Export for Vercel serverless
 module.exports = app;
