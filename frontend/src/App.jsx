@@ -280,10 +280,9 @@ const App = () => {
         context={analysisContext}
       />
 
-      {/* GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* 1. Brent Crude */}
-        <div className="col-span-1 md:col-span-2 xl:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+        {/* 1. Brent Crude (50% Width) */}
+        <div className="col-span-1">
           <ChartCard
             title="Brent Crude Oil"
             value={`$${data?.oil?.price?.toFixed(2)}`}
@@ -299,7 +298,7 @@ const App = () => {
           />
         </div>
 
-        {/* 2. REER */}
+        {/* 2. REER (50% Width - Now has space for buttons) */}
         <div className="col-span-1">
           <ChartCard
             title="India REER (40-Basket)"
@@ -316,25 +315,8 @@ const App = () => {
           />
         </div>
 
-        {/* 3. CPI */}
-        <div className="col-span-1">
-          <ChartCard
-            title="India CPI Inflation"
-            value={`${data?.cpi?.price?.toFixed(2)}%`}
-            subValue="Monthly"
-            data={charts?.cpi}
-            dataKey="value"
-            color="#facc15"
-            unitSuffix="%"
-            onAnalyze={() => handleChartAnalyze("CPI")}
-            onTimeRangeChange={handleTimeRangeChange}
-            currentTimeRange={timeRange}
-            className="h-[380px]"
-          />
-        </div>
-
-        {/* 4. Currency */}
-        <div className="col-span-1 md:col-span-2 xl:col-span-2">
+        {/* 3. Currency Matrix (Full Width for detail) */}
+        <div className="col-span-1 md:col-span-2">
           <ChartCard
             title="Currency Matrix (Relative %)"
             value="Exchange Rates"
@@ -353,25 +335,24 @@ const App = () => {
           />
         </div>
 
-        {/* 5. Forex */}
-        <div className="col-span-1 md:col-span-2 xl:col-span-2">
+        {/* 4. CPI (50% Width) */}
+        <div className="col-span-1">
           <ChartCard
-            title="Forex Reserves"
-            value={`$${data?.forex?.price?.toFixed(2)}B`}
-            subValue="Weekly"
-            data={charts?.forex}
+            title="India CPI Inflation"
+            value={`${data?.cpi?.price?.toFixed(2)}%`}
+            subValue="Monthly"
+            data={charts?.cpi}
             dataKey="value"
-            color="#3b82f6"
-            unitPrefix="$"
-            unitSuffix="B"
-            onAnalyze={() => handleChartAnalyze("FOREX")}
+            color="#facc15"
+            unitSuffix="%"
+            onAnalyze={() => handleChartAnalyze("CPI")}
             onTimeRangeChange={handleTimeRangeChange}
             currentTimeRange={timeRange}
-            className="h-[350px]"
+            className="h-[380px]"
           />
         </div>
 
-        {/* 6. Trade */}
+        {/* 5. Trade Deficit (50% Width - Now has space) */}
         <div className="col-span-1">
           <ChartCard
             title="Trade Deficit"
@@ -383,6 +364,24 @@ const App = () => {
             unitPrefix="$"
             unitSuffix="B"
             onAnalyze={() => handleChartAnalyze("TRADE")}
+            onTimeRangeChange={handleTimeRangeChange}
+            currentTimeRange={timeRange}
+            className="h-[380px]"
+          />
+        </div>
+
+        {/* 6. Forex Reserves (Full Width) */}
+        <div className="col-span-1 md:col-span-2">
+          <ChartCard
+            title="Forex Reserves"
+            value={`$${data?.forex?.price?.toFixed(2)}B`}
+            subValue="Weekly"
+            data={charts?.forex}
+            dataKey="value"
+            color="#3b82f6"
+            unitPrefix="$"
+            unitSuffix="B"
+            onAnalyze={() => handleChartAnalyze("FOREX")}
             onTimeRangeChange={handleTimeRangeChange}
             currentTimeRange={timeRange}
             className="h-[350px]"

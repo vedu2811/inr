@@ -117,15 +117,12 @@ const ChartCard = ({
     <div
       className={`relative bg-[#0f172a] border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col transition-all hover:border-slate-600/50 group ${className}`}
     >
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-6 gap-4 z-10 w-full">
-        {/* Title */}
-        <div className="min-w-0">
-          {" "}
-          {/* min-w-0 prevents title from forcing wrap unnecessarily */}
-          <h3 className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-1 flex items-center gap-2">
+      <div className="flex items-start justify-between mb-6 gap-4 z-10 w-full relative">
+        {/* Title Group */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-1 flex items-center gap-2 truncate">
             <span
-              className={`w-1.5 h-1.5 rounded-full ${
+              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                 value && value.includes("-") ? "bg-red-500" : "bg-emerald-500"
               }`}
             ></span>
@@ -141,8 +138,8 @@ const ChartCard = ({
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-3 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80 ml-auto">
+        {/* Controls Group - Forced Single Line */}
+        <div className="flex items-center gap-3 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80 flex-shrink-0 ml-auto">
           {/* Time Pills */}
           {onTimeRangeChange && (
             <div className="flex items-center gap-0.5">
@@ -150,7 +147,7 @@ const ChartCard = ({
                 <button
                   key={range}
                   onClick={() => onTimeRangeChange(range)}
-                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all duration-200 ${
+                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all duration-200 whitespace-nowrap ${
                     currentTimeRange === range
                       ? "bg-slate-700 text-white shadow-sm"
                       : "text-slate-500 hover:text-slate-300 hover:bg-slate-800"
@@ -168,7 +165,7 @@ const ChartCard = ({
           {onAnalyze && (
             <button
               onClick={onAnalyze}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/50 text-cyan-400 hover:bg-cyan-500 hover:text-white border border-cyan-900/50 hover:border-cyan-400 transition-all duration-300 text-[10px] font-bold uppercase tracking-wider"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/50 text-cyan-400 hover:bg-cyan-500 hover:text-white border border-cyan-900/50 hover:border-cyan-400 transition-all duration-300 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
             >
               Analyze <span className="text-xs">✨</span>
             </button>
