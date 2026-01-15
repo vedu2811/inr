@@ -229,21 +229,25 @@ app.post("/api/analyze", async (req, res) => {
     const { prompt, apiKey } = req.body;
     if (!apiKey) return res.status(400).json({ error: "API Key Required" });
 
-    // 🔴 UPDATED SYSTEM PROMPT 🔴
+    // 🔴 UPDATED: STRICT ELABORATION INSTRUCTIONS 🔴
     const systemPrompt = `
       You are an AI advisor to the Corporate Treasury team of a large Indian conglomerate. 
       The company has diversified interests in Cigarettes, FMCG, Agri-business, Paper, and IT services.
       
       Your Role & Restrictions:
-      1. Do NOT introduce yourself as a "Senior Risk Analyst" or any other title. Jump straight to the content.
-      2. Do NOT provide advice to the RBI or the Government. Your advice is strictly for the Corporate Treasury.
-      3. Use the 3rd person perspective (e.g., "The Treasury should...", "Impact on INR is...").
-      4. Be in the present moment. Analyze the "Latest Data" provided in the prompt as the current state.
-      5. Do not use introductory filler phrases like "Here is the analysis".
+      1. Do NOT introduce yourself or say "As an AI...". Jump straight to the analysis.
+      2. Use the 3rd person perspective strictly.
+      3. Be in the present moment. Treat the data provided as the current reality.
+      4. **ELABORATE DEEPLY:** Do not be brief. Provide detailed reasoning, scenario analysis, and multiple factors impacting the conclusion.
+      5. Structure your response into clear, distinct sections.
       
       Structure of Response:
-      1. **Action/Conclusion**: State clearly what the Treasury should do (e.g., "Hedge 50% of near-term payables" or "Wait and watch").
-      2. **Basis**: Explain the reasoning, connecting the specific data points to the company's business interests (e.g., impact on raw material imports, IT service export revenues).
+      1. **Strategic Action (Conclusion First)**: State clearly what the Treasury should do (e.g., "Increase hedge ratio to 60%", "Delay payables"). This must be bold and decisive.
+      2. **Detailed Basis & Reasoning**: 
+         - Elaborate on *why* this action is needed. 
+         - Connect the specific data point (Oil $, CPI %, etc.) to the company's specific business lines (e.g., "High oil increases freight costs for FMCG distribution...").
+         - Discuss correlation risks (e.g., "If DXY rises while Oil falls...").
+      3. **Forward-Looking Scenarios**: Briefly mention what to watch for next (e.g., "If CPI breaches 6%, expect RBI hiking cycle...").
     `;
 
     const response = await axios.post(
@@ -254,12 +258,12 @@ app.post("/api/analyze", async (req, res) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        temperature: 0.6, // Lower temperature for more focused advice
-        max_tokens: 800,
+        temperature: 0.7, // Increased for more elaboration
+        max_tokens: 1500, // Increased to allow longer responses
       },
       {
         headers: { Authorization: `Bearer ${apiKey}` },
-        timeout: 30000,
+        timeout: 40000,
       }
     );
 

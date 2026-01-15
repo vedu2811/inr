@@ -102,7 +102,6 @@ const App = () => {
 
   const handleTimeRangeChange = (newRange) => setTimeRange(newRange);
 
-  // 🔴 UPDATED ANALYZE FUNCTION 🔴
   const handleChartAnalyze = async (type) => {
     if (!apiKey) {
       alert("Please enter your Groq API Key first.");
@@ -112,38 +111,36 @@ const App = () => {
     setIsModalOpen(true);
     setAnalysisResult("");
 
-    // Helper to get latest date string
     const getLatestDate = (historyArr) => {
       if (!historyArr || historyArr.length === 0) return "Unknown Date";
-      return historyArr[historyArr.length - 1].date; // Returns the actual last date in the array
+      return historyArr[historyArr.length - 1].date;
     };
 
     let prompt = "";
-    const today = new Date().toLocaleDateString();
 
+    // 🔴 UPDATED PROMPTS FOR ELABORATION 🔴
     if (type === "OIL") {
       const date = getLatestDate(data?.oil?.history);
       prompt = `
         Context: The company has significant energy needs for manufacturing (FMCG, Paper) and logistics.
         Data: Brent Crude Oil is trading at $${data.oil.price} as of ${date}.
-        Task: Analyze the impact on input costs and INR stability. Should the treasury increase hedging for oil imports?
+        Task: Provide a detailed analysis. Elaborate on how this specific price level impacts input costs for the Paper and FMCG divisions. Discuss the correlation with INR depreciation. Should the treasury increase hedging for oil imports? Provide a thorough reasoning.
         `;
     } else if (type === "CPI") {
       const date = getLatestDate(data?.cpi?.history);
       prompt = `
-        Context: The company sells FMCG products where consumer demand is sensitive to inflation.
+        Context: The company sells FMCG products where consumer demand is highly sensitive to inflation.
         Data: India CPI Inflation is at ${data.cpi.price}% as of ${date}.
-        Task: Analyze the impact on consumer purchasing power and the RBI's interest rate stance. How does this affect the cost of working capital?
+        Task: Elaborate on the impact of this inflation rate on consumer purchasing power and rural demand for Cigarettes/FMCG. Analyze the RBI's likely interest rate stance in detail. How does this affect the cost of working capital borrowing?
         `;
     } else if (type === "TRADE") {
       const date = getLatestDate(data?.tradeDeficit?.history);
       prompt = `
         Context: A widening trade deficit puts pressure on the INR.
         Data: India's Trade Deficit is $${data.tradeDeficit.price} Billion as of ${date}.
-        Task: Analyze if this deficit level signals immediate depreciation pressure on the INR. Should the treasury expedite export realization (IT Services/Agri) or delay import payments?
+        Task: Provide a comprehensive analysis. Does this deficit level signal immediate depreciation pressure on the INR? Explain the mechanics of how this deficit affects the Balance of Payments. Should the treasury expedite export realization (IT Services/Agri) or delay import payments?
         `;
     } else if (type === "FX") {
-      // Specific Currency prompt
       const date = getLatestDate(data?.currencies?.inr?.history);
       prompt = `
         Context: The company exports IT services/Agri (Long USD/EUR) and imports raw materials (Short USD/CNY).
@@ -152,29 +149,28 @@ const App = () => {
         - CNY: ${data?.currencies?.cny?.price}
         - DXY: ${data?.currencies?.dxy?.price}
         
-        Task:
-        1. Analyze the specific impact of DXY strength/weakness on INR.
-        2. Analyze the CNY correlation (competitor currency in exports).
-        3. Explain how these currencies are interacting right now.
-        4. Provide a trading strategy for the treasury given these correlations.
+        Task: Provide a detailed, multi-part analysis:
+        1. Elaborate on the specific impact of DXY trends on INR.
+        2. Analyze the CNY correlation (competitor currency) in detail.
+        3. Explain the interplay between these currencies.
+        4. Provide a robust trading strategy for the treasury given these correlations.
         `;
     } else if (type === "REER") {
       const date = getLatestDate(data?.reer?.history);
       prompt = `
         Context: The company is a net exporter in IT and Agri.
         Data: India REER (40-Basket) is at ${data.reer.price} as of ${date}. (Fair value is approx 100).
-        Task: Is the INR overvalued or undervalued relative to trade partners? Does an overvalued REER hurt the competitiveness of the company's Agri/IT exports? Recommend a hedging ratio.
+        Task: Elaborate on the valuation of INR. Is it overvalued or undervalued relative to trade partners? Detailed explanation of how an overvalued REER hurts the competitiveness of the company's Agri/IT exports vs peers. Recommend a specific hedging ratio with detailed justification.
         `;
     } else if (type === "FOREX") {
       const date = getLatestDate(data?.forex?.history);
       prompt = `
-        Context: The treasury actively trades and holds positions in USD, EUR, GBP, and JPY.
+        Context: The corporate treasury actively trades and holds positions in USD, EUR, GBP, and JPY.
         Data: India Forex Reserves are $${data.forex.price} Billion as of ${date}.
         Task: 
-        1. Do NOT discuss India's macro risk. 
-        2. Focus specifically on the risks to the corporate treasury trading desk.
-        3. Does this reserve level give the RBI enough firepower to intervene and squash volatility? 
-        4. How should the treasury position its USD, EUR, GBP, and JPY trades in light of RBI's intervention capacity?
+        1. Focus specifically on the risks to the corporate treasury trading desk (NOT India macro risk).
+        2. Elaborate on whether this reserve level gives the RBI enough firepower to intervene and squash volatility in USD/INR.
+        3. detailed advice on how the treasury should position its USD, EUR, GBP, and JPY trades.
         `;
     }
 
