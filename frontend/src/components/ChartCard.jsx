@@ -118,9 +118,11 @@ const ChartCard = ({
       className={`relative bg-[#0f172a] border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col transition-all hover:border-slate-600/50 group ${className}`}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 z-10">
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4 z-10 w-full">
         {/* Title */}
-        <div>
+        <div className="min-w-0">
+          {" "}
+          {/* min-w-0 prevents title from forcing wrap unnecessarily */}
           <h3 className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-1 flex items-center gap-2">
             <span
               className={`w-1.5 h-1.5 rounded-full ${
@@ -130,17 +132,17 @@ const ChartCard = ({
             {title}
           </h3>
           <div className="flex items-baseline gap-2">
-            <div className="text-2xl font-bold text-white tracking-tight font-sans">
+            <div className="text-2xl font-bold text-white tracking-tight font-sans truncate">
               {value || "—"}
             </div>
-            <span className="text-xs font-semibold text-slate-500 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
+            <span className="text-xs font-semibold text-slate-500 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800 whitespace-nowrap">
               {subValue}
             </span>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-3 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80">
+        <div className="flex items-center gap-3 bg-slate-900/80 p-1 rounded-xl border border-slate-800/80 ml-auto">
           {/* Time Pills */}
           {onTimeRangeChange && (
             <div className="flex items-center gap-0.5">
