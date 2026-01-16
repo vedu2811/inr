@@ -5,7 +5,7 @@ import { fetchRiskData } from "./services/dataService";
 import axios from "axios";
 import companyLogo from "./assets/logo.png";
 
-// 🔴 Leave empty for Vercel
+// 🔴 FIX: Smart URL detection (Matches your dataService logic)
 const API_URL =
   import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
 
@@ -58,6 +58,7 @@ const App = () => {
           const realCny = liveData.currencies?.cny?.history || [];
           const realDxy = liveData.currencies?.dxy?.history || [];
 
+          // Calculate relative performance for the Basket
           const rawData = realInr.map((item, i) => ({
             date: item.date,
             inr: item.value,
@@ -112,66 +113,64 @@ const App = () => {
     setIsModalOpen(true);
     setAnalysisResult("");
 
+    // 🔴 FIX: Ensure we get the absolute latest date by sorting
     const getLatestDate = (historyArr) => {
       if (!historyArr || historyArr.length === 0) return "Unknown Date";
-      return historyArr[historyArr.length - 1].date;
+      // Create a copy and sort by date descending to get the true latest
+      const sorted = [...historyArr].sort(
+        (a, b) => new Date(a.date) - new Date(b.date)
+      );
+      return sorted[sorted.length - 1].date;
     };
 
     let prompt = "";
 
-    // 🔴 UPDATED PROMPTS FOR ELABORATION 🔴
+    // 🔴 UPDATED PROMPTS: STRICT TREASURY & TRADING FOCUS 🔴
     if (type === "OIL") {
       const date = getLatestDate(data?.oil?.history);
       prompt = `
-        Context: The company has significant energy needs for manufacturing (FMCG, Paper) and logistics.
-        Data: Brent Crude Oil is trading at $${data.oil.price} as of ${date}.
-        Task: Provide a detailed analysis. Elaborate on how this specific price level impacts input costs for the Paper and FMCG divisions. Discuss the correlation with INR depreciation. Should the treasury increase hedging for oil imports? Provide a thorough reasoning.
+        **Data**: Brent Crude Oil is trading at $${data.oil.price} as of ${date}.
+        **Treasury Context**: Identify the correlation between this price level and INR spot volatility. 
+        **Decision**: Should the trading desk bias towards paying premiums for Options (to capture dips) or locking in Forwards? Base this solely on the Oil-INR pass-through effect.
         `;
     } else if (type === "CPI") {
       const date = getLatestDate(data?.cpi?.history);
       prompt = `
-        Context: The company sells FMCG products where consumer demand is highly sensitive to inflation.
-        Data: India CPI Inflation is at ${data.cpi.price}% as of ${date}.
-        Task: Elaborate on the impact of this inflation rate on consumer purchasing power and rural demand for Cigarettes/FMCG. Analyze the RBI's likely interest rate stance in detail. How does this affect the cost of working capital borrowing?
+        **Data**: India CPI Inflation is ${data.cpi.price}% as of ${date}.
+        **Treasury Context**: Analyze the impact on the 1-year Forward Premia (MIFOR curve). Does this inflation print suggest the RBI will keep liquidity tight, supporting the yield differential?
+        **Decision**: Should the desk execute long-term swaps now or wait?
         `;
     } else if (type === "TRADE") {
       const date = getLatestDate(data?.tradeDeficit?.history);
       prompt = `
-        Context: A widening trade deficit puts pressure on the INR.
-        Data: India's Trade Deficit is $${data.tradeDeficit.price} Billion as of ${date}.
-        Task: Provide a comprehensive analysis. Does this deficit level signal immediate depreciation pressure on the INR? Explain the mechanics of how this deficit affects the Balance of Payments. Should the treasury expedite export realization (IT Services/Agri) or delay import payments?
+        **Data**: Trade Deficit is $${data.tradeDeficit.price} Billion as of ${date}.
+        **Treasury Context**: This deficit implies a specific structural demand for Month-End USD. 
+        **Decision**: Evaluate the timing for purchasing USD for import payments. Does this deficit size warrant pre-funding (buying early) to avoid month-end spikes?
         `;
     } else if (type === "FX") {
       const date = getLatestDate(data?.currencies?.inr?.history);
       prompt = `
-        Context: The company exports IT services/Agri (Long USD/EUR) and imports raw materials (Short USD/CNY).
-        Data (As of ${date}):
-        - INR: ${data?.currencies?.inr?.price}
-        - CNY: ${data?.currencies?.cny?.price}
-        - DXY: ${data?.currencies?.dxy?.price}
-        
-        Task: Provide a detailed, multi-part analysis:
-        1. Elaborate on the specific impact of DXY trends on INR.
-        2. Analyze the CNY correlation (competitor currency) in detail.
-        3. Explain the interplay between these currencies.
-        4. Provide a robust trading strategy for the treasury given these correlations.
+        **Data (As of ${date})**: INR: ${data?.currencies?.inr?.price}, CNY: ${data?.currencies?.cny?.price}, DXY: ${data?.currencies?.dxy?.price}.
+        **Treasury Context**: Analyze the currency correlations.
+        1. **CNY Impact**: If CNY weakens, does INR follow immediately or with a lag? 
+        2. **DXY Beta**: Is INR tracking the Dollar Index or idiosyncratic factors?
+        **Decision**: Propose a pair-trading view. Should we trade the INR/CNY cross or focus on USD/INR directional bets?
         `;
     } else if (type === "REER") {
       const date = getLatestDate(data?.reer?.history);
       prompt = `
-        Context: The company is a net exporter in IT and Agri.
-        Data: India REER (40-Basket) is at ${data.reer.price} as of ${date}. (Fair value is approx 100).
-        Task: Elaborate on the valuation of INR. Is it overvalued or undervalued relative to trade partners? Detailed explanation of how an overvalued REER hurts the competitiveness of the company's Agri/IT exports vs peers. Recommend a specific hedging ratio with detailed justification.
+        **Data**: India REER (40-Basket) is ${data.reer.price} as of ${date}.
+        **Treasury Context**: A REER > 100 implies overvaluation. 
+        **Decision**: Does this valuation increase the risk of a sharp "mean reversion" (depreciation)? How should this shape the tenure of our export hedges (Short vs Long term)?
         `;
     } else if (type === "FOREX") {
       const date = getLatestDate(data?.forex?.history);
       prompt = `
-        Context: The corporate treasury actively trades and holds positions in USD, EUR, GBP, and JPY.
-        Data: India Forex Reserves are $${data.forex.price} Billion as of ${date}.
-        Task: 
-        1. Focus specifically on the risks to the corporate treasury trading desk (NOT India macro risk).
-        2. Elaborate on whether this reserve level gives the RBI enough firepower to intervene and squash volatility in USD/INR.
-        3. detailed advice on how the treasury should position its USD, EUR, GBP, and JPY trades.
+        **Data**: Forex Reserves are $${data.forex.price} Billion as of ${date}.
+        **Treasury Context**: The treasury trades USD, EUR, GBP, and JPY.
+        **Decision**: 
+        1. Assess the RBI's "Intervention Capacity". Does this reserve level allow them to cap USD/INR upside indefinitely?
+        2. Based on this, should the treasury sell volatility (Short Straddles) expecting range-bound action, or buy volatility expecting a breakout?
         `;
     }
 
@@ -195,7 +194,6 @@ const App = () => {
 
       {/* HEADER */}
       <header className="relative z-10 mb-10 bg-gradient-to-r from-slate-900/80 to-slate-900/40 backdrop-blur-2xl border border-slate-700/50 rounded-3xl p-6 shadow-lg shadow-cyan-900/5 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
-        {/* Logo */}
         <div className="flex items-center gap-6">
           <img
             src={companyLogo}
@@ -211,8 +209,6 @@ const App = () => {
             </p>
           </div>
         </div>
-
-        {/* Controls */}
         <div className="flex flex-col items-end gap-4 w-full xl:w-auto">
           <div className="flex items-center justify-between gap-6 px-5 py-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80 shadow-inner w-full xl:w-auto">
             <div className="flex items-center gap-2.5">
@@ -234,7 +230,6 @@ const App = () => {
               {currentTime.toLocaleTimeString(undefined, { hour12: false })}
             </div>
           </div>
-
           <div className="relative group w-full xl:w-80">
             <div className="flex items-center bg-slate-950/80 rounded-xl border border-slate-800/80 focus-within:border-cyan-500/50 focus-within:ring-2 focus-within:ring-cyan-500/10 transition-all shadow-sm overflow-hidden h-11">
               <div className="pl-4 text-slate-500">
@@ -281,8 +276,8 @@ const App = () => {
         context={analysisContext}
       />
 
+      {/* GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
-        {/* 1. Brent Crude (50% Width) */}
         <div className="col-span-1">
           <ChartCard
             title="Brent Crude Oil"
@@ -298,8 +293,6 @@ const App = () => {
             className="h-[400px]"
           />
         </div>
-
-        {/* 2. REER (50% Width - Now has space for buttons) */}
         <div className="col-span-1">
           <ChartCard
             title="India REER (40-Basket)"
@@ -315,8 +308,6 @@ const App = () => {
             className="h-[400px]"
           />
         </div>
-
-        {/* 3. Currency Matrix (Full Width for detail) */}
         <div className="col-span-1 md:col-span-2">
           <ChartCard
             title="Currency Matrix (Relative %)"
@@ -335,8 +326,6 @@ const App = () => {
             className="h-[380px]"
           />
         </div>
-
-        {/* 4. CPI (50% Width) */}
         <div className="col-span-1">
           <ChartCard
             title="India CPI Inflation"
@@ -352,8 +341,6 @@ const App = () => {
             className="h-[380px]"
           />
         </div>
-
-        {/* 5. Trade Deficit (50% Width - Now has space) */}
         <div className="col-span-1">
           <ChartCard
             title="Trade Deficit"
@@ -370,8 +357,6 @@ const App = () => {
             className="h-[380px]"
           />
         </div>
-
-        {/* 6. Forex Reserves (Full Width) */}
         <div className="col-span-1 md:col-span-2">
           <ChartCard
             title="Forex Reserves"

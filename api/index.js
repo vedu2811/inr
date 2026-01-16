@@ -7,22 +7,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- CACHE SYSTEM ---
 let CACHED_DATA = null;
 let LAST_FETCH_TIME = 0;
-const CACHE_DURATION = 15 * 60 * 1000; // 15 Minutes
+const CACHE_DURATION = 15 * 60 * 1000;
 
 const fetchSpreadsheet = async () => {
   try {
-    // 🔴 FIX: Read the variable INSIDE the function to ensure .env is loaded
     const sheetUrl = process.env.GOOGLE_SHEET_URL;
-
-    if (!sheetUrl || sheetUrl.startsWith("PASTE_YOUR")) {
-      throw new Error("Google Sheet URL is missing or invalid in .env file");
-    }
+    if (!sheetUrl) throw new Error("Missing Sheet URL");
 
     console.log("☁️ Fetching data from Google Sheets...");
-
     const response = await axios.get(sheetUrl, {
       responseType: "arraybuffer",
       headers: { "User-Agent": "Mozilla/5.0" },
@@ -43,7 +37,6 @@ const fetchSpreadsheet = async () => {
       reer: [],
       forexReserves: [],
     };
-
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
@@ -65,7 +58,6 @@ const fetchSpreadsheet = async () => {
       }
       return null;
     };
-
     const getVal = (val) => {
       const cleaned = typeof val === "string" ? val.replace(/,/g, "") : val;
       const num = parseFloat(cleaned);
@@ -77,7 +69,6 @@ const fetchSpreadsheet = async () => {
     for (let i = 5; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row.length === 0) continue;
-
       const dateObj = parseDate(row[0]);
       if (dateObj && dateObj <= today) {
         const dateStr = dateObj.toLocaleDateString("en-US", {
@@ -86,7 +77,6 @@ const fetchSpreadsheet = async () => {
           year: "numeric",
         });
         const ts = dateObj.getTime();
-
         const inr = getVal(row[1]);
         if (inr) lastKnown.inr = inr;
         const cny = getVal(row[2]);
@@ -95,7 +85,6 @@ const fetchSpreadsheet = async () => {
         if (dxy) lastKnown.dxy = dxy;
         const oil = getVal(row[4]);
         if (oil) lastKnown.brent = oil;
-
         if (lastKnown.inr)
           tempStore.currencies.inr.push({
             date: dateStr,
@@ -125,7 +114,6 @@ const fetchSpreadsheet = async () => {
             frequency: "daily",
           });
       }
-
       const pushMacro = (dCol, vCol, storeArr, freq, divisor = 1) => {
         const mDate = parseDate(row[dCol]);
         const mVal = getVal(row[vCol]);
@@ -141,7 +129,6 @@ const fetchSpreadsheet = async () => {
           });
         }
       };
-
       pushMacro(8, 9, tempStore.forexReserves, "weekly", 1000000000);
       pushMacro(11, 12, tempStore.tradeDeficit, "monthly", 1000000000);
       pushMacro(20, 21, tempStore.cpi, "monthly", 1);
@@ -174,18 +161,14 @@ const filterByTimeRange = (data, range) => {
   return data.filter((item) => item.timestamp >= cutoff);
 };
 
-// --- API ROUTES ---
 app.get("/api/dashboard-data", async (req, res) => {
   try {
     if (!CACHED_DATA || Date.now() - LAST_FETCH_TIME > CACHE_DURATION) {
-      // 🔴 Only fetch if cache is old, allowing immediate retries on fail
       console.log("Checking for fresh data...");
       await fetchSpreadsheet();
     }
-
-    if (!CACHED_DATA) {
+    if (!CACHED_DATA)
       return res.status(500).json({ error: "Failed to load data" });
-    }
 
     const range = req.query.range || "5Y";
     const filter = (arr) => filterByTimeRange(arr, range);
@@ -223,7 +206,6 @@ app.get("/api/dashboard-data", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Dashboard error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -233,26 +215,23 @@ app.post("/api/analyze", async (req, res) => {
     const { prompt, apiKey } = req.body;
     if (!apiKey) return res.status(400).json({ error: "API Key Required" });
 
-    // 🔴 UPDATED: STRICT ELABORATION INSTRUCTIONS 🔴
+    // 🔴 STRICT TREASURY SYSTEM PROMPT
     const systemPrompt = `
-      You are an AI advisor to the Corporate Treasury team of a large Indian conglomerate. 
-      The company has diversified interests in Cigarettes, FMCG, Agri-business, Paper, and IT services.
-      
-      Your Role & Restrictions:
-      1. Do NOT introduce yourself or say "As an AI...". Jump straight to the analysis.
-      2. Use the 3rd person perspective strictly.
-      3. Be in the present moment. Treat the data provided as the current reality.
-      4. **ELABORATE DEEPLY:** Do not be brief. Provide detailed reasoning, scenario analysis, and multiple factors impacting the conclusion.
-      5. Structure your response into clear, distinct sections.
-      
-      Structure of Response:
-      1. **Strategic Action (Conclusion First)**: State clearly what the Treasury should do (e.g., "Increase hedge ratio to 60%", "Delay payables"). This must be bold and decisive.
-      2. **Detailed Basis & Reasoning**: 
-         - Elaborate on *why* this action is needed. 
-         - Connect the specific data point (Oil $, CPI %, etc.) to the company's specific business lines (e.g., "High oil increases freight costs for FMCG distribution...").
-         - Discuss correlation risks (e.g., "If DXY rises while Oil falls...").
-      3. **Forward-Looking Scenarios**: Briefly mention what to watch for next (e.g., "If CPI breaches 6%, expect RBI hiking cycle...").
-    `;
+          You are the Chief FX Dealer for a large Indian conglomerate with interests in Cigarettes, FMCG, Agri, Paper, and IT.
+          
+          MANDATORY RULES:
+          1. **CONCLUSION FIRST:** Start strictly with "Strategic Action:" followed by the recommendation. No intro fluff.
+          2. **3rd PERSON ONLY:** Use "The Treasury should", "The Desk advises". Never "I".
+          3. **NO BUSINESS OPERATIONS:** Do NOT discuss how oil affects FMCG margins or paper costs. Focus ONLY on the *Financial Market Risk* (USD/INR volatility, Forward Premiums).
+          4. **NO HEDGE %:** Do NOT suggest "Hedge 50%". Advise on *Instruments* (e.g., "Buy 1M ATM Call Options", "Book Cash-Tom").
+          5. **TRADING LENS:** Discuss correlation, volatility (VIX), and carry. Be technical.
+          6. **NO RBI ADVICE:** Do not advise the RBI. Advise the company on how to react to RBI.
+          
+          Structure:
+          1. **Strategic Action**: Clear buy/sell/wait directive.
+          2. **Market Logic**: Technical & Macro reasoning connecting the data to INR flows.
+          3. **Instrument Choice**: Why Forwards? Why Options? (Cost vs Certainty).
+        `;
 
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -262,18 +241,14 @@ app.post("/api/analyze", async (req, res) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        temperature: 0.7,
-        max_tokens: 1500,
+        temperature: 0.5,
+        max_tokens: 1000, // Reduced to prevent Vercel 10s Timeout
       },
-      {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        timeout: 40000,
-      }
+      { headers: { Authorization: `Bearer ${apiKey}` }, timeout: 40000 }
     );
-
     res.json({ analysis: response.data.choices[0].message.content });
   } catch (error) {
-    console.error("AI Analysis error:", error.message);
+    console.error("AI Error:", error.message);
     res.status(500).json({ error: "AI Analysis Failed" });
   }
 });
@@ -282,15 +257,11 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// 🔴 LOCAL SERVER STARTUP LOGIC 🔴
-// This must remain at the bottom
 if (require.main === module) {
   const PORT = 5000;
-  // Attempt to load .env. If it fails, that's okay (on Vercel it will fail but vars are injected)
   try {
     require("dotenv").config({ path: "../.env" });
   } catch (e) {}
-
   app.listen(PORT, () => {
     console.log(`🚀 Local Server running on http://localhost:${PORT}`);
   });
