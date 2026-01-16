@@ -12,15 +12,18 @@ let CACHED_DATA = null;
 let LAST_FETCH_TIME = 0;
 const CACHE_DURATION = 15 * 60 * 1000; // 15 Minutes
 
-// --- GOOGLE SHEET LINK ---
-const GOOGLE_SHEET_URL =
-  process.env.GOOGLE_SHEET_URL || "PASTE_YOUR_LINK_HERE_ONLY_IF_ENV_FAILS";
-
 const fetchSpreadsheet = async () => {
   try {
+    // 🔴 FIX: Read the variable INSIDE the function to ensure .env is loaded
+    const sheetUrl = process.env.GOOGLE_SHEET_URL;
+
+    if (!sheetUrl || sheetUrl.startsWith("PASTE_YOUR")) {
+      throw new Error("Google Sheet URL is missing or invalid in .env file");
+    }
+
     console.log("☁️ Fetching data from Google Sheets...");
 
-    const response = await axios.get(GOOGLE_SHEET_URL, {
+    const response = await axios.get(sheetUrl, {
       responseType: "arraybuffer",
       headers: { "User-Agent": "Mozilla/5.0" },
       timeout: 10000,
@@ -175,7 +178,8 @@ const filterByTimeRange = (data, range) => {
 app.get("/api/dashboard-data", async (req, res) => {
   try {
     if (!CACHED_DATA || Date.now() - LAST_FETCH_TIME > CACHE_DURATION) {
-      console.log("Cache expired, fetching new data...");
+      // 🔴 Only fetch if cache is old, allowing immediate retries on fail
+      console.log("Checking for fresh data...");
       await fetchSpreadsheet();
     }
 
@@ -258,8 +262,8 @@ app.post("/api/analyze", async (req, res) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        temperature: 0.7, // Increased for more elaboration
-        max_tokens: 1500, // Increased to allow longer responses
+        temperature: 0.7,
+        max_tokens: 1500,
       },
       {
         headers: { Authorization: `Bearer ${apiKey}` },
@@ -277,5 +281,19 @@ app.post("/api/analyze", async (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// 🔴 LOCAL SERVER STARTUP LOGIC 🔴
+// This must remain at the bottom
+if (require.main === module) {
+  const PORT = 5000;
+  // Attempt to load .env. If it fails, that's okay (on Vercel it will fail but vars are injected)
+  try {
+    require("dotenv").config({ path: "../.env" });
+  } catch (e) {}
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Local Server running on http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;

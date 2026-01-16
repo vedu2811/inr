@@ -6,7 +6,8 @@ import axios from "axios";
 import companyLogo from "./assets/logo.png";
 
 // 🔴 Leave empty for Vercel
-const API_URL = "";
+const API_URL =
+  import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
 
 const formatHistory = (historyArr) => {
   if (!historyArr || historyArr.length === 0) return [];

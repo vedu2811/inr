@@ -1,11 +1,11 @@
 import axios from "axios";
 
-// 🔴 Leave empty for Vercel deployment (it uses relative path)
-const API_URL = "";
+// 🔴 FIX: Smart URL detection
+const API_URL =
+  import.meta.env.MODE === "development" ? "http://localhost:5000" : "";
 
 export const fetchRiskData = async (timeRange = "5Y") => {
   try {
-    // This constructs: https://your-site.vercel.app/api/dashboard-data?range=5Y
     const response = await axios.get(
       `${API_URL}/api/dashboard-data?range=${timeRange}`
     );
